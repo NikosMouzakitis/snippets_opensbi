@@ -1,0 +1,46 @@
+--- a/lib/sbi/sbi_init.c
++++ b/lib/sbi/sbi_init.c
+@@ -62,6 +62,32 @@ static void sbi_boot_print_banner(struct sbi_scratch *scratch)
+        sbi_printf(BANNER);
+ }
+ 
++static void check_privilege_mode(void)
++{
++       unsigned long mstatus, mpp;
++
++       // Read mstatus into mstatus variable
++       asm volatile("csrr %0, mstatus" : "=r"(mstatus));
++       // Extract MPP (Machine Previous Privilege) field
++       mpp = (mstatus & 0x1800) >> 11;
++       sbi_printf("mstatus: %lx\n", mstatus);  
++       sbi_printf("mpp: %lx\n", mpp);  
++       // Check the value of MPP
++       if (mpp == PRV_U) {
++        // User Mode
++               sbi_printf("User MODE\n");
++       } else if (mpp == PRV_S) {
++        // Supervisor Mode
++               sbi_printf("Supervisor MODE\n");
++       } else if (mpp == PRV_M) {
++        // Machine Mode
++               sbi_printf("Machine MODE\n");
++       } else {
++        // Handle unexpected value
++               sbi_printf("Unexpected privilege MODE\n");
++       }
++}
++
+ static void sbi_boot_print_general(struct sbi_scratch *scratch)
+ {
+        char str[128];
+@@ -79,6 +105,9 @@ static void sbi_boot_print_general(struct sbi_scratch *scratch)
+                return;
+ 
+        /* Platform details */
++
++       check_privilege_mode();
++
+        sbi_printf("Platform Name             : %s\n",
+                   sbi_platform_name(plat));
+        sbi_platform_get_features_str(plat, str, sizeof(str));
+
